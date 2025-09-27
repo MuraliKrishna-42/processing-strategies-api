@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="28084000-1969-44c3-88ea-8238b59614d1" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="processing-strategies-for-each" doc:id="7781f7f8-ff50-44da-8d43-12364c644ece" >
+		<http:listener doc:name="Listener" doc:id="386697ea-2c36-4571-853a-0f74efea9bcf" config-ref="HTTP_Listener_config" path="/for-each"/>
+		<ee:transform doc:name="payload declaration" doc:id="d79e2370-6c2a-4f9d-b4a9-eb4859a075e4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[
+    "for-each", "parallel-for-each","batch-processing",
+    1,
+    null,
+    [1,2,3],
+    {
+    "message": "Hello world!"
+}
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="70352f47-8f83-4881-a986-8ffe1674fc73" >
+			<ee:transform doc:name="Transform Message" doc:id="1f2a0b2e-9151-4ea4-8a04-fab04e46dfb3" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="Thread Name" doc:id="7895aea7-d2bb-4a5d-9894-47b1dc88c49a" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="thread_name" ><![CDATA[%dw 2.0
+import currentThread from java!java::lang::Thread
+output application/java
+---
+currentThread().tid]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<logger level="INFO" doc:name="Processing time with thread name " doc:id="d145a8fe-09fa-497d-a91c-ecd76377d4b3" message="#[%dw 2.0&#10;output application/java&#10;---&#10;&quot;'&quot; ++ write(payload,&quot;application/java&quot;) ++ &quot;' - record value start processing with threadID: &quot; ++ vars.thread_name ++ &quot; at time: &quot; ++ now() as String {format: &quot;yyy-MM-dd:HH:mm:ss&quot;}]" />
+		</foreach>
+		<logger level="INFO" doc:name="Log Payload" doc:id="24a348d4-1f37-4640-a424-47a82b0fb26c" message="#[payload]"/>
+	</flow>
+	<flow name="processing-strategies-parallel-for-each" doc:id="1be02a3d-4f98-4232-93d5-45cec2c05288" >
+		<http:listener doc:name="Listener" doc:id="15692357-7b78-45bd-b9df-a014492dc7cb" config-ref="HTTP_Listener_config" path="/parallel-for-each"/>
+		<ee:transform doc:name="payload declaration" doc:id="2cb4e8c6-5672-4a7b-8dac-226f79386922" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[
+    "for-each", "parallel-for-each","batch-processing",
+    1,
+    null,
+    [1,2,3],
+    {
+    "message": "Hello world!"
+}
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="006f6d93-8e71-45bc-ae8a-abc851bd315d">
+		<ee:transform doc:name="Transform Message" doc:id="605badfd-71b6-4986-a72d-ba3c46314d7b" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="Thread Name" doc:id="80812d06-77af-460d-ae51-e77ac4afc5d5" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="thread_name" ><![CDATA[%dw 2.0
+import currentThread from java!java::lang::Thread
+output application/java
+---
+currentThread().tid]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<logger level="INFO" doc:name="Processing time with thread name " doc:id="bafbdcaa-530b-4c11-8711-1780be6794c1" message="#[%dw 2.0&#10;output application/java&#10;---&#10;&quot;'&quot; ++ write(payload,&quot;application/java&quot;) ++ &quot;' - record value start processing with threadID: &quot; ++ vars.thread_name ++ &quot; at time: &quot; ++ now() as String {format: &quot;yyy-MM-dd:HH:mm:ss&quot;}]" />
+		</parallel-foreach>
+		<logger level="INFO" doc:name="Log payload" doc:id="0fecf69c-a283-4937-9fc5-d5ef171833ff" message="#[payload]"/>
+	</flow>
+</mule>
